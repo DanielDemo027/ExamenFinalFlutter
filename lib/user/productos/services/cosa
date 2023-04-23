@@ -1,0 +1,168 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:proyectofinal/user/productos/image.dart';
+import 'package:proyectofinal/user/productos/productos.dart';
+
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+
+
+class addnote extends StatefulWidget {
+  @override
+  State<addnote> createState() => _addnoteState();
+}
+
+class _addnoteState extends State<addnote> {
+  TextEditingController nombre = TextEditingController();
+
+  TextEditingController marca = TextEditingController();
+
+  TextEditingController precio = TextEditingController();
+
+  TextEditingController estado = TextEditingController();
+
+  TextEditingController talla = TextEditingController();
+
+  CollectionReference ref = FirebaseFirestore.instance.collection('productos');
+
+  String imageUrl = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 233, 232, 232),
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 233, 232, 232),
+        actions: [
+          MaterialButton(
+            onPressed: () async {
+              if(imageUrl.isEmpty){
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor seleccione una imagen')));
+                return;
+              }
+              ref.add({
+                'nombre': nombre.text,
+                'marca': marca.text,
+                'precio': precio.text,
+                'estado': estado.text,
+                'talla': talla.text,
+                'imagen': imageUrl
+              }).whenComplete((){
+                Navigator.pushReplacement(
+                  context,MaterialPageRoute(builder: (_) => const Home()));
+              });
+            },
+            child: const Text(
+              'Guardar',
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.black
+              ),
+            ),
+          ),
+          MaterialButton(
+            onPressed: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Home()));
+            },
+            child: const Text(
+              'Atras',
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.black
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.fromLTRB(35, 50, 35, 0),
+              child: TextFormField(
+                controller: nombre,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  label: Text('Nombre'),
+                labelStyle: TextStyle(color: Color.fromARGB(255, 238, 62, 49)),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.fromLTRB(35, 30, 35, 0),
+              child: TextFormField(
+                controller: marca,
+                decoration: const InputDecoration(
+                  label: Text('Marca'),
+                labelStyle: TextStyle(color: Color.fromARGB(255, 238, 62, 49)),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.fromLTRB(35, 30, 35, 0),
+              child: TextFormField(
+                controller: precio,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  label: Text('Precio'),
+                labelStyle: TextStyle(color: Color.fromARGB(255, 238, 62, 49)),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.fromLTRB(35, 30, 35, 0),
+              child: TextFormField(
+                controller: estado,
+                decoration: const InputDecoration(
+                  label: Text('Estado'),
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 238, 62, 49)),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.fromLTRB(35, 30, 35, 30),
+              child: TextFormField(
+                controller: talla,
+                decoration: const InputDecoration(
+                  label: Text('Talla'),
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 238, 62, 49)),
+                ),
+              ),
+            ),
+
+            const Text('Subir imagen'),
+
+            IconButton(
+              onPressed: () async {
+                ImagePicker imagePicker = ImagePicker();
+                XFile? file = await imagePicker.pickImage(source: ImageSource.gallery);
+                print(file?.path);
+
+
+                if(file == null) return;
+                String uniqueFileName = DateTime.now().millisecondsSinceEpoch.toString();
+
+                Reference referenceRoot = FirebaseStorage.instance.ref();
+                Reference referenceDirImages = referenceRoot.child('images');
+
+                Reference referenceImageToUpload = referenceDirImages.child(uniqueFileName);
+
+                try{
+                  referenceImageToUpload.putFile(File(file!.path));
+                  imageUrl = await referenceImageToUpload.getDownloadURL();
+
+                }catch(error){
+                  print(imageUrl);
+                }
+              },
+              icon: const Icon(Icons.camera_alt_rounded, size: 40,),
+            )
+
+            //const Imagen_UI()
+          ],
+        ),
+      ),
+    );
+  }
+}
